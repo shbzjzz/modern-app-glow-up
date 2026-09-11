@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActionsRouteImport } from './routes/actions'
+import { Route as ArticlesRouteImport } from './routes/articles'
+import { Route as BuyerActionRouteImport } from './routes/buyer-action'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as NotifyRouteImport } from './routes/notify'
+import { Route as StoresRouteImport } from './routes/stores'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,40 +27,98 @@ const ActionsRoute = ActionsRouteImport.update({
   path: '/actions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArticlesRoute = ArticlesRouteImport.update({
+  id: '/articles',
+  path: '/articles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuyerActionRoute = BuyerActionRouteImport.update({
+  id: '/buyer-action',
+  path: '/buyer-action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotifyRoute = NotifyRouteImport.update({
+  id: '/notify',
+  path: '/notify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoresRoute = StoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/articles': typeof ArticlesRoute
+  '/buyer-action': typeof BuyerActionRoute
   '/login': typeof LoginRoute
+  '/notify': typeof NotifyRoute
+  '/stores': typeof StoresRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/articles': typeof ArticlesRoute
+  '/buyer-action': typeof BuyerActionRoute
   '/login': typeof LoginRoute
+  '/notify': typeof NotifyRoute
+  '/stores': typeof StoresRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/articles': typeof ArticlesRoute
+  '/buyer-action': typeof BuyerActionRoute
   '/login': typeof LoginRoute
+  '/notify': typeof NotifyRoute
+  '/stores': typeof StoresRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/actions' | '/login'
+  fullPaths:
+    | '/'
+    | '/actions'
+    | '/articles'
+    | '/buyer-action'
+    | '/login'
+    | '/notify'
+    | '/stores'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/actions' | '/login'
-  id: '__root__' | '/' | '/actions' | '/login'
+  to:
+    | '/'
+    | '/actions'
+    | '/articles'
+    | '/buyer-action'
+    | '/login'
+    | '/notify'
+    | '/stores'
+  id:
+    | '__root__'
+    | '/'
+    | '/actions'
+    | '/articles'
+    | '/buyer-action'
+    | '/login'
+    | '/notify'
+    | '/stores'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
+  ArticlesRoute: typeof ArticlesRoute
+  BuyerActionRoute: typeof BuyerActionRoute
   LoginRoute: typeof LoginRoute
+  NotifyRoute: typeof NotifyRoute
+  StoresRoute: typeof StoresRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,11 +137,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/articles': {
+      id: '/articles'
+      path: '/articles'
+      fullPath: '/articles'
+      preLoaderRoute: typeof ArticlesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buyer-action': {
+      id: '/buyer-action'
+      path: '/buyer-action'
+      fullPath: '/buyer-action'
+      preLoaderRoute: typeof BuyerActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notify': {
+      id: '/notify'
+      path: '/notify'
+      fullPath: '/notify'
+      preLoaderRoute: typeof NotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stores': {
+      id: '/stores'
+      path: '/stores'
+      fullPath: '/stores'
+      preLoaderRoute: typeof StoresRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -88,7 +178,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
+  ArticlesRoute: ArticlesRoute,
+  BuyerActionRoute: BuyerActionRoute,
   LoginRoute: LoginRoute,
+  NotifyRoute: NotifyRoute,
+  StoresRoute: StoresRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
