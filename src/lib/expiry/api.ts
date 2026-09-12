@@ -31,9 +31,12 @@ export function apiGet<T = unknown>(action: string, params = ""): Promise<T> {
 }
 
 export function apiPost<T = unknown>(action: string, body?: unknown): Promise<T> {
-  return apiFetch(`${CF_API}?action=${action}`, {
-    method: "POST",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  }).then((r) => r.json() as Promise<T>);
+  const init: RequestInit = { method: "POST" };
+  if (body !== undefined) {
+    init.headers = { "Content-Type": "application/json" };
+    init.body = JSON.stringify(body);
+  }
+  return apiFetch(`${CF_API}?action=${action}`, init).then(
+    (r) => r.json() as Promise<T>,
+  );
 }
