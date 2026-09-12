@@ -85,7 +85,10 @@ function SubmissionPage() {
   const missing = rows.filter((r) => r.items === 0);
 
   const send = async () => {
-    if (!picked.length) return toast.error("Select at least one store");
+    if (!picked.length) {
+      toast.error("Select at least one store");
+      return;
+    }
     setBusy(true);
     try {
       const out = await apiFetch(`${CF_API}?action=sendSubmissionReminders`, {

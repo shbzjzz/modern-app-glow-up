@@ -78,7 +78,10 @@ function AdminPage() {
   }, [isAdmin, fetchUsers]);
 
   const createUser = async () => {
-    if (!nUser || !nPass) return toast.error("Username and password are required");
+    if (!nUser || !nPass) {
+      toast.error("Username and password are required");
+      return;
+    }
     setBusy(true);
     try {
       const payload = nAdmin
