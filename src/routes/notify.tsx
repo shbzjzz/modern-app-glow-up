@@ -85,7 +85,10 @@ export function NotifyPage() {
   };
 
   const copyList = async () => {
-    if (!rows.length) return toast.error("Nothing to copy");
+    if (!rows.length) {
+      toast.error("Nothing to copy");
+      return;
+    }
     const text = [
       cols.join("\t"),
       ...rows.map((r) =>
@@ -104,7 +107,10 @@ export function NotifyPage() {
   };
 
   const mailto = () => {
-    if (!f.code) return toast.error("Select a store first");
+    if (!f.code) {
+      toast.error("Select a store first");
+      return;
+    }
     const subject = encodeURIComponent(
       `Expiry actions — ${codeToStore[f.code] || f.code} (${rows.length} items)`,
     );

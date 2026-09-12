@@ -106,7 +106,7 @@ export function Kpi({
           <span
             className={cn(
               "grid size-7 place-items-center rounded-lg border",
-              TONES[tone] || TONES.brand,
+              TONES[tone] || TONES['brand'],
             )}
           >
             {icon}
@@ -137,7 +137,7 @@ export function RiskBadge({ bucket }: { bucket: string }) {
     <span
       className={cn(
         "inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
-        TONES[t] || TONES.na,
+        TONES[t] || TONES['na'],
       )}
     >
       {bucket}

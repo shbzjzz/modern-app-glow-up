@@ -56,12 +56,12 @@ export function parseDate(v: unknown): Date | null {
     return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   }
   let m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  if (m) return new Date(+m[1]!, +m[2]! - 1, +m[3]!);
   m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
   if (m) {
-    const day = +m[1];
-    const mon = +m[2];
-    let yr = +m[3];
+    const day = +m[1]!;
+    const mon = +m[2]!;
+    let yr = +m[3]!;
     if (yr < 100) yr += 2000;
     return new Date(yr, mon - 1, day);
   }
@@ -84,27 +84,27 @@ export function parseSM(v: string) {
   const s = v.trim();
   let m = s.match(/^(\d{4})-(\d{1,2})$/);
   if (m) {
-    const y = +m[1];
-    const mn = +m[2];
+    const y = +m[1]!;
+    const mn = +m[2]!;
     return {
       ym: `${y}-${String(mn).padStart(2, "0")}`,
       year: y,
       monthNum: mn,
-      disp: MS[mn - 1] + " " + y,
+      disp: MS[mn - 1]! + " " + y,
     };
   }
   m = s.match(/^([A-Za-z]+)\s+(\d{4})$/);
   if (m) {
     const idx = MS.findIndex(
-      (x) => x.toLowerCase() === m![1].slice(0, 3).toLowerCase(),
+      (x) => x.toLowerCase() === m![1]!.slice(0, 3).toLowerCase(),
     );
     if (idx >= 0) {
-      const y = +m[2];
+      const y = +m[2]!;
       return {
         ym: `${y}-${String(idx + 1).padStart(2, "0")}`,
         year: y,
         monthNum: idx + 1,
-        disp: MS[idx] + " " + y,
+        disp: MS[idx]! + " " + y,
       };
     }
   }
@@ -135,7 +135,7 @@ export function processRows(rawExpiry: RawRow[]): ProcRow[] {
   return rawExpiry.map((r) => {
     const store = cv(r, "Store", "StoreName");
     const weekRaw = cv(r, "Week");
-    const week = weekRaw ? weekRaw.split(" (")[0].trim() : "";
+    const week = weekRaw ? weekRaw.split(" (")[0]!.trim() : "";
     let subMonthRaw = cv(r, "Submission Month", "SubmissionMonth", "SubMonth");
     if (!subMonthRaw) {
       const ts = cv(r, "Timestamp");
@@ -334,7 +334,7 @@ export function currentWeekLabel() {
 
 export function ymLabel(ym: string) {
   const m = ym.match(/^(\d{4})-(\d{2})$/);
-  return m ? MS[+m[2] - 1] + " " + m[1] : ym;
+  return m ? MS[+m[2]! - 1]! + " " + m[1] : ym;
 }
 
 /* ── generic sorting ── */

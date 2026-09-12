@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActionsRouteImport } from './routes/actions'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ArticlesRouteImport } from './routes/articles'
 import { Route as BuyerActionRouteImport } from './routes/buyer-action'
+import { Route as InspectorRouteImport } from './routes/inspector'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NotifyRouteImport } from './routes/notify'
 import { Route as StoresRouteImport } from './routes/stores'
+import { Route as SubmissionRouteImport } from './routes/submission'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -27,6 +30,11 @@ const ActionsRoute = ActionsRouteImport.update({
   path: '/actions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArticlesRoute = ArticlesRouteImport.update({
   id: '/articles',
   path: '/articles',
@@ -35,6 +43,11 @@ const ArticlesRoute = ArticlesRouteImport.update({
 const BuyerActionRoute = BuyerActionRouteImport.update({
   id: '/buyer-action',
   path: '/buyer-action',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InspectorRoute = InspectorRouteImport.update({
+  id: '/inspector',
+  path: '/inspector',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -52,73 +65,99 @@ const StoresRoute = StoresRouteImport.update({
   path: '/stores',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubmissionRoute = SubmissionRouteImport.update({
+  id: '/submission',
+  path: '/submission',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/admin': typeof AdminRoute
   '/articles': typeof ArticlesRoute
   '/buyer-action': typeof BuyerActionRoute
+  '/inspector': typeof InspectorRoute
   '/login': typeof LoginRoute
   '/notify': typeof NotifyRoute
   '/stores': typeof StoresRoute
+  '/submission': typeof SubmissionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/admin': typeof AdminRoute
   '/articles': typeof ArticlesRoute
   '/buyer-action': typeof BuyerActionRoute
+  '/inspector': typeof InspectorRoute
   '/login': typeof LoginRoute
   '/notify': typeof NotifyRoute
   '/stores': typeof StoresRoute
+  '/submission': typeof SubmissionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/admin': typeof AdminRoute
   '/articles': typeof ArticlesRoute
   '/buyer-action': typeof BuyerActionRoute
+  '/inspector': typeof InspectorRoute
   '/login': typeof LoginRoute
   '/notify': typeof NotifyRoute
   '/stores': typeof StoresRoute
+  '/submission': typeof SubmissionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/actions'
+    | '/admin'
     | '/articles'
     | '/buyer-action'
+    | '/inspector'
     | '/login'
     | '/notify'
     | '/stores'
+    | '/submission'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/actions'
+    | '/admin'
     | '/articles'
     | '/buyer-action'
+    | '/inspector'
     | '/login'
     | '/notify'
     | '/stores'
+    | '/submission'
   id:
     | '__root__'
     | '/'
     | '/actions'
+    | '/admin'
     | '/articles'
     | '/buyer-action'
+    | '/inspector'
     | '/login'
     | '/notify'
     | '/stores'
+    | '/submission'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
+  AdminRoute: typeof AdminRoute
   ArticlesRoute: typeof ArticlesRoute
   BuyerActionRoute: typeof BuyerActionRoute
+  InspectorRoute: typeof InspectorRoute
   LoginRoute: typeof LoginRoute
   NotifyRoute: typeof NotifyRoute
   StoresRoute: typeof StoresRoute
+  SubmissionRoute: typeof SubmissionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -137,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/articles': {
       id: '/articles'
       path: '/articles'
@@ -149,6 +195,13 @@ declare module '@tanstack/react-router' {
       path: '/buyer-action'
       fullPath: '/buyer-action'
       preLoaderRoute: typeof BuyerActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inspector': {
+      id: '/inspector'
+      path: '/inspector'
+      fullPath: '/inspector'
+      preLoaderRoute: typeof InspectorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -172,17 +225,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/submission': {
+      id: '/submission'
+      path: '/submission'
+      fullPath: '/submission'
+      preLoaderRoute: typeof SubmissionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
+  AdminRoute: AdminRoute,
   ArticlesRoute: ArticlesRoute,
   BuyerActionRoute: BuyerActionRoute,
+  InspectorRoute: InspectorRoute,
   LoginRoute: LoginRoute,
   NotifyRoute: NotifyRoute,
   StoresRoute: StoresRoute,
+  SubmissionRoute: SubmissionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

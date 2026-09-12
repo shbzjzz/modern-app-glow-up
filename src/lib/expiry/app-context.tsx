@@ -141,7 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (er.status === "fulfilled" && er.value?.rows) {
       const rows: RawRow[] = er.value.rows;
-      const actioned = rows.filter((r) => r.ActionTaken);
+      const actioned = rows.filter((r) => r['ActionTaken']);
       const processed = applyPreviouslyActioned(processRows(rows));
       processed.forEach((r) => {
         if (r.StoreCode && r.Store && !map[r.StoreCode]) map[r.StoreCode] = r.Store;

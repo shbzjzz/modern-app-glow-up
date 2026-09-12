@@ -66,8 +66,8 @@ export function AppShell({
   useEffect(() => {
     const pads = ["0.3rem 0.6rem", "0.5rem 0.75rem", "0.7rem 0.95rem"];
     const fonts = ["0.6875rem", "0.75rem", "0.8125rem"];
-    document.documentElement.style.setProperty("--row-pad", pads[density]);
-    document.documentElement.style.setProperty("--row-font", fonts[density]);
+    document.documentElement.style.setProperty("--row-pad", pads[density]!);
+    document.documentElement.style.setProperty("--row-font", fonts[density]!);
   }, [density]);
 
   useEffect(() => {

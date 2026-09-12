@@ -77,7 +77,7 @@ export function downloadSheet(
   if (!data.length) return false;
   const useCols = cols.length
     ? cols
-    : Object.keys(data[0]).filter((c) => !c.startsWith("_"));
+    : Object.keys(data[0] ?? {}).filter((c) => !c.startsWith("_"));
   const ws = XLSX.utils.json_to_sheet(data, { header: useCols });
   autoFitAndTable(ws, data, useCols);
   const wb = XLSX.utils.book_new();
@@ -97,9 +97,9 @@ export function readSheetFile(
       try {
         const wb = XLSX.read(new Uint8Array(e.target!.result as ArrayBuffer), {
           type: "array",
-          cellDates: opts.cellDates,
+          ...(opts.cellDates ? { cellDates: true } : {}),
         });
-        const ws = wb.Sheets[wb.SheetNames[0]];
+        const ws = wb.Sheets[wb.SheetNames[0]!]!;
         resolve(XLSX.utils.sheet_to_json(ws, { defval: "", ...opts }));
       } catch (err) {
         reject(err as Error);
