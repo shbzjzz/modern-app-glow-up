@@ -14,6 +14,8 @@ export interface FilterState {
   setDepts: (v: string[]) => void;
   status: string;
   setStatus: (v: string) => void;
+  statuses: string[];
+  setStatuses: (v: string[]) => void;
   buckets: string[];
   setBuckets: (v: string[]) => void;
   search: string;
@@ -32,23 +34,23 @@ export interface FilterState {
 
 /** Shared filter engine for every screen. Scoped by user permissions. */
 export function useFilters(): FilterState {
-  const { proc, stores, codeToStore, userStores, userDepartments } = useApp();
+  const { buyerVisibleProc, stores, codeToStore, userStores, userDepartments } = useApp();
   const [code, setCode] = useState("");
   const [ym, setYm] = useState("");
   const [week, setWeek] = useState("");
   const [depts, setDepts] = useState<string[]>([]);
   const [status, setStatus] = useState("");
+  const [statuses, setStatuses] = useState<string[]>([]);
   const [buckets, setBuckets] = useState<string[]>([]);
   const [search, setSearch] = useState("");
 
-  // permission-scoped base data
+  // permission-scoped base data — already excludes buyer-disabled articles
   const base = useMemo(() => {
-    let d = proc;
+    let d = buyerVisibleProc;
     if (userStores.length) d = d.filter((r) => userStores.includes(r.StoreCode));
-    if (userDepartments.length)
-      d = d.filter((r) => userDepartments.includes(r.Department));
+    if (userDepartments.length) d = d.filter((r) => userDepartments.includes(r.Department));
     return d;
-  }, [proc, userStores, userDepartments]);
+  }, [buyerVisibleProc, userStores, userDepartments]);
 
   const codes = useMemo(() => {
     const seen = new Map<string, string>();
@@ -67,9 +69,7 @@ export function useFilters(): FilterState {
       if (r["Submission Month"])
         m.set(r["Submission Month"], r["Sub Month Display"] || r["Submission Month"]);
     });
-    return [...m]
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([v, label]) => ({ ym: v, label }));
+    return [...m].sort((a, b) => b[0].localeCompare(a[0])).map(([v, label]) => ({ ym: v, label }));
   }, [base]);
 
   const weeks = useMemo(() => {
@@ -93,6 +93,7 @@ export function useFilters(): FilterState {
       if (week && r.Week !== week) return false;
       if (depts.length && !depts.includes(r.Department)) return false;
       if (status && r["Action Status"] !== status) return false;
+      if (statuses.length && !statuses.includes(r["Action Status"])) return false;
       if (buckets.length && !buckets.includes(r["Expiry Risk Bucket"])) return false;
       if (q) {
         const hay = `${r.Article} ${r.Description} ${r.Barcode} ${r.Store}`.toLowerCase();
@@ -100,7 +101,7 @@ export function useFilters(): FilterState {
       }
       return true;
     });
-  }, [base, code, ym, week, depts, status, buckets, search]);
+  }, [base, code, ym, week, depts, status, statuses, buckets, search]);
 
   const activeChips = useMemo(() => {
     const c: string[] = [];
@@ -109,10 +110,11 @@ export function useFilters(): FilterState {
     if (week) c.push(`Week: ${week}`);
     if (depts.length) c.push(`Dept: ${depts.join(", ")}`);
     if (status) c.push(`Status: ${status}`);
+    if (statuses.length) c.push(`Status: ${statuses.join(", ")}`);
     if (buckets.length) c.push(`Risk: ${buckets.join(", ")}`);
     if (search.trim()) c.push(`Search: ${search.trim()}`);
     return c;
-  }, [code, ym, week, depts, status, buckets, search, months]);
+  }, [code, ym, week, depts, status, statuses, buckets, search, months]);
 
   return {
     code,
@@ -125,6 +127,8 @@ export function useFilters(): FilterState {
     setDepts,
     status,
     setStatus,
+    statuses,
+    setStatuses,
     buckets,
     setBuckets,
     search,
@@ -135,6 +139,7 @@ export function useFilters(): FilterState {
       setWeek("");
       setDepts([]);
       setStatus("");
+      setStatuses([]);
       setBuckets([]);
       setSearch("");
     },

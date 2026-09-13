@@ -5,30 +5,49 @@ import {
   ClipboardCheck,
   Database,
   Gauge,
+  ListChecks,
   LogOut,
+  MapPin,
   Maximize2,
   Minimize2,
   Menu,
   RefreshCw,
   Send,
   Settings,
+  Sliders,
   Store,
   Zap,
 } from "lucide-react";
 import { useApp } from "@/lib/expiry/app-context";
 import { cn } from "@/lib/utils";
-import { F, isOverdueRow } from "@/lib/expiry/utils";
+import { isOverdueRow } from "@/lib/expiry/utils";
 import { useState } from "react";
 
 const NAV = [
   { to: "/", label: "Overview", icon: Gauge, group: "Analytics" },
-  { to: "/actions", label: "Action Center", icon: Zap, group: "Analytics", badge: true },
-  { to: "/notify", label: "Notify Store", icon: Send, group: "Analytics" },
+  {
+    to: "/attention",
+    label: "Needs My Attention",
+    icon: ListChecks,
+    group: "Analytics",
+    buyerOnly: true,
+    badge: true,
+  },
+  { to: "/area-view", label: "Area View", icon: MapPin, group: "Analytics", areaOnly: true },
+  { to: "/actions", label: "Action Center", icon: Zap, group: "Analytics", hideAreaManager: true },
+  { to: "/notify", label: "Notify Store", icon: Send, group: "Analytics", hideAreaManager: true },
   { to: "/stores", label: "Store Summary", icon: Store, group: "Analytics" },
   { to: "/articles", label: "Article View", icon: Boxes, group: "Reports" },
-  { to: "/buyer-action", label: "Buyers Action", icon: Zap, group: "Reports", buyer: true },
+  { to: "/buyer-action", label: "Buyer's Action", icon: Zap, group: "Reports", buyerOrArea: true },
   { to: "/submission", label: "Submission Status", icon: ClipboardCheck, group: "Reports" },
-  { to: "/inspector", label: "Data Inspector", icon: Database, group: "Reports" },
+  {
+    to: "/inspector",
+    label: "Data Inspector",
+    icon: Database,
+    group: "Reports",
+    hideAreaManager: true,
+  },
+  { to: "/settings", label: "Buyer Settings", icon: Sliders, group: "System", buyerOnly: true },
   { to: "/admin", label: "Admin Panel", icon: Settings, group: "System", admin: true },
 ] as const;
 
@@ -52,8 +71,10 @@ export function AppShell({
     lastRefresh,
     density,
     setDensity,
-    proc,
+    buyerVisibleProc,
     isAdmin,
+    isAreaManager,
+    isBuyer,
   } = useApp();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -82,12 +103,22 @@ export function AppShell({
     );
   }
 
-  const pending = proc.filter(F.pend).length;
-  const overdue = proc.filter(isOverdueRow).length;
-  const isBuyer = !!user && !isAdmin && !!user.departments && user.departments !== "ALL";
-  const visible = NAV.filter(
-    (n) => (!("admin" in n) || isAdmin) && (!("buyer" in n) || isBuyer || isAdmin),
-  );
+  const attentionCount = buyerVisibleProc.filter(
+    (r) =>
+      ["Pending Action", "Validity Expired"].includes(r["Action Status"]) &&
+      parseFloat(r.Stock) > 0 &&
+      Number.isFinite(Number(r.DaysLeft)) &&
+      Number(r.DaysLeft) >= 0,
+  ).length;
+  const overdue = buyerVisibleProc.filter(isOverdueRow).length;
+  const visible = NAV.filter((n) => {
+    if ("admin" in n && n.admin && !isAdmin) return false;
+    if ("buyerOnly" in n && n.buyerOnly && !isBuyer) return false;
+    if ("areaOnly" in n && n.areaOnly && !isAreaManager) return false;
+    if ("buyerOrArea" in n && n.buyerOrArea && !isBuyer && !isAreaManager) return false;
+    if ("hideAreaManager" in n && n.hideAreaManager && isAreaManager) return false;
+    return true;
+  });
   const groups = [...new Set(visible.map((n) => n.group))];
 
   const dots: Record<string, string> = {
@@ -143,9 +174,9 @@ export function AppShell({
                     >
                       <Icon className="size-4 shrink-0" />
                       <span className="truncate">{n.label}</span>
-                      {"badge" in n && pending > 0 && (
+                      {"badge" in n && n.badge && attentionCount > 0 && (
                         <span className="ml-auto rounded-full bg-crit px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
-                          {pending}
+                          {attentionCount}
                         </span>
                       )}
                     </Link>
@@ -169,9 +200,7 @@ export function AppShell({
             <span>Last refresh</span>
             <strong className="text-sidebar-foreground">{lastRefresh}</strong>
           </div>
-          {overdue > 0 && (
-            <p className="mt-1 text-[10px] text-med">{overdue} overdue items</p>
-          )}
+          {overdue > 0 && <p className="mt-1 text-[10px] text-med">{overdue} overdue items</p>}
         </div>
       </aside>
 
@@ -193,12 +222,8 @@ export function AppShell({
             <Menu className="size-4" />
           </button>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-display text-lg font-semibold text-foreground">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
-            )}
+            <h1 className="truncate font-display text-lg font-semibold text-foreground">{title}</h1>
+            {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
           </div>
           <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 md:flex">
             <Minimize2 className="size-3.5 text-muted-foreground" />

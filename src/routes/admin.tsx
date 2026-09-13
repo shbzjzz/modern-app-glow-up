@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Plus, Settings, Trash2, Upload, Users } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+  AlertTriangle,
+  Loader2,
+  Mail,
+  Plus,
+  Settings,
+  ShoppingBag,
+  Store as StoreIcon,
+  Trash2,
+  Upload,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/expiry/app-shell";
 import {
@@ -47,10 +58,16 @@ function AdminPage() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [add, setAdd] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [uploadState, setUploadState] = useState<{ tone: string; msg: string } | null>(
-    null,
-  );
+  const [uploadState, setUploadState] = useState<{ tone: string; msg: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const articlesFileRef = useRef<HTMLInputElement>(null);
+  const storesFileRef = useRef<HTMLInputElement>(null);
+  const emailMapFileRef = useRef<HTMLInputElement>(null);
+  const [masterStatus, setMasterStatus] = useState<
+    Record<string, { tone: string; msg: string } | null>
+  >({});
+  const [delAction, setDelAction] = useState<"clearOldExpData" | "clearAllExpData" | null>(null);
+  const [delBusy, setDelBusy] = useState(false);
 
   // new user form
   const [nUser, setNUser] = useState("");
@@ -156,6 +173,69 @@ function AdminPage() {
     }
   };
 
+  const MASTER_ACTIONS: Record<string, string> = {
+    Articles: "uploadArticles",
+    Stores: "uploadStores",
+    EmailMap: "uploadEmailMap",
+  };
+
+  const uploadMaster = async (type: "Articles" | "Stores" | "EmailMap", file: File) => {
+    setMasterStatus((s) => ({
+      ...s,
+      [type]: { tone: "text-muted-foreground", msg: "Reading file…" },
+    }));
+    try {
+      const rows = await readSheetFile(file);
+      setMasterStatus((s) => ({
+        ...s,
+        [type]: { tone: "text-muted-foreground", msg: `Uploading ${rows.length} rows…` },
+      }));
+      const out = await apiFetch(`${CF_API}?action=${MASTER_ACTIONS[type]}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      }).then((r) => r.json());
+      if (out.success) {
+        setMasterStatus((s) => ({
+          ...s,
+          [type]: { tone: "text-low", msg: `${type} uploaded — ${out.rows || rows.length} rows` },
+        }));
+        toast.success(`${type} uploaded`);
+        if (type === "Stores") void loadAll();
+      } else {
+        setMasterStatus((s) => ({
+          ...s,
+          [type]: { tone: "text-crit", msg: out.message || "Upload failed" },
+        }));
+      }
+    } catch (err) {
+      setMasterStatus((s) => ({
+        ...s,
+        [type]: { tone: "text-crit", msg: (err as Error).message },
+      }));
+    }
+  };
+
+  const runDangerAction = async () => {
+    if (!delAction) return;
+    setDelBusy(true);
+    try {
+      const res = await apiFetch(`${CF_API}/?action=${delAction}`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "Done");
+        setDelAction(null);
+        void loadAll();
+      } else {
+        toast.error(data.message || "Unauthorized");
+      }
+    } catch {
+      toast.error("Network error occurred");
+    } finally {
+      setDelBusy(false);
+    }
+  };
+
   const roleOf = (u: AppUser) =>
     u.isAdmin
       ? { label: "Admin", detail: "Full access", cls: "border-low/25 bg-low-soft text-low" }
@@ -225,9 +305,7 @@ function AdminPage() {
                           {r.label}
                         </span>
                       </td>
-                      <td className="max-w-[18rem] truncate text-muted-foreground">
-                        {r.detail}
-                      </td>
+                      <td className="max-w-[18rem] truncate text-muted-foreground">{r.detail}</td>
                       <td>
                         {u.username !== user?.username && (
                           <Button variant="danger" onClick={() => setDelUser(u)}>
@@ -271,17 +349,87 @@ function AdminPage() {
               />
             </label>
             {uploadState && (
-              <p className={`text-xs font-semibold ${uploadState.tone}`}>
-                {uploadState.msg}
-              </p>
+              <p className={`text-xs font-semibold ${uploadState.tone}`}>{uploadState.msg}</p>
             )}
             <p className="text-[11px] text-muted-foreground">
-              Existing rows for the same store, article and week are replaced. The
-              dashboard refreshes automatically after a successful upload.
+              Existing rows for the same store, article and week are replaced. The dashboard
+              refreshes automatically after a successful upload.
             </p>
           </PanelBody>
         </Panel>
       </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <MasterUploadCard
+          title="Upload articles"
+          sub="Columns required: Barcode, Article, Description, Department"
+          icon={<ShoppingBag className="size-4 text-primary" />}
+          fileRef={articlesFileRef}
+          status={masterStatus["Articles"]}
+          onFile={(file) => void uploadMaster("Articles", file)}
+        />
+        <MasterUploadCard
+          title="Upload stores"
+          sub="Columns required: StoreCode, StoreName, Password"
+          icon={<StoreIcon className="size-4 text-primary" />}
+          fileRef={storesFileRef}
+          status={masterStatus["Stores"]}
+          onFile={(file) => void uploadMaster("Stores", file)}
+        />
+        <MasterUploadCard
+          title="Upload email map"
+          sub="Columns required: StoreCode, ToEmail, CcEmail"
+          icon={<Mail className="size-4 text-primary" />}
+          fileRef={emailMapFileRef}
+          status={masterStatus["EmailMap"]}
+          onFile={(file) => void uploadMaster("EmailMap", file)}
+        />
+      </div>
+
+      <Panel
+        title="Data management"
+        sub="Danger zone — permanent deletion of ExpiryTracker records"
+        icon={<AlertTriangle className="size-4 text-crit" />}
+        className="border-crit/25"
+      >
+        <PanelBody className="flex flex-wrap gap-2">
+          <Button
+            className="border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:bg-orange-950/30 dark:text-orange-300"
+            onClick={() => setDelAction("clearOldExpData")}
+          >
+            <Trash2 className="size-3.5" /> Clear data — before 4 months
+          </Button>
+          <Button variant="danger" onClick={() => setDelAction("clearAllExpData")}>
+            <Trash2 className="size-3.5" /> Clear data — all expiry data
+          </Button>
+        </PanelBody>
+      </Panel>
+
+      <Modal
+        open={!!delAction}
+        onClose={() => setDelAction(null)}
+        title={
+          delAction === "clearOldExpData"
+            ? "Delete data older than 4 months"
+            : "DELETE ALL EXPIRY DATA"
+        }
+        sub="This action cannot be undone"
+        icon={<AlertTriangle className="size-4" />}
+        footer={
+          <>
+            <Button onClick={() => setDelAction(null)}>Cancel</Button>
+            <Button variant="danger" onClick={runDangerAction} disabled={delBusy}>
+              {delBusy ? "Processing…" : "Confirm delete"}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-muted-foreground">
+          {delAction === "clearOldExpData"
+            ? "This will permanently delete all entries in the ExpiryTracker older than 4 months."
+            : "This will permanently delete ALL entries in the ExpiryTracker table."}
+        </p>
+      </Modal>
 
       <Modal
         open={add}
@@ -303,12 +451,7 @@ function AdminPage() {
             <TextInput value={nUser} onChange={setNUser} placeholder="new.user" />
           </Labeled>
           <Labeled label="Password">
-            <TextInput
-              type="password"
-              value={nPass}
-              onChange={setNPass}
-              placeholder="••••••••"
-            />
+            <TextInput type="password" value={nPass} onChange={setNPass} placeholder="••••••••" />
           </Labeled>
           <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-foreground">
             <input
@@ -378,5 +521,43 @@ function AdminPage() {
         </p>
       </Modal>
     </AppShell>
+  );
+}
+
+function MasterUploadCard({
+  title,
+  sub,
+  icon,
+  fileRef,
+  status,
+  onFile,
+}: {
+  title: string;
+  sub: string;
+  icon: ReactNode;
+  fileRef: RefObject<HTMLInputElement | null>;
+  status: { tone: string; msg: string } | null | undefined;
+  onFile: (file: File) => void;
+}) {
+  return (
+    <Panel title={title} sub={sub} icon={icon}>
+      <PanelBody className="flex flex-col gap-2.5">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-surface-2/50 px-3 py-5 text-center text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-primary-soft/30">
+          <Upload className="size-4 text-primary" /> Choose file
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onFile(file);
+              if (fileRef.current) fileRef.current.value = "";
+            }}
+          />
+        </label>
+        {status && <p className={`text-[11px] font-semibold ${status.tone}`}>{status.msg}</p>}
+      </PanelBody>
+    </Panel>
   );
 }

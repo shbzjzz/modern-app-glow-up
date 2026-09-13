@@ -56,7 +56,11 @@ function InspectorPage() {
     const needle = q.trim().toLowerCase();
     const filtered = needle
       ? source.filter((r) =>
-          Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(needle)),
+          Object.values(r).some((v) =>
+            String(v ?? "")
+              .toLowerCase()
+              .includes(needle),
+          ),
         )
       : source;
     return filtered.slice(0, Number(limit) || 200);

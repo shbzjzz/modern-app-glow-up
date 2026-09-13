@@ -23,6 +23,8 @@ export interface ProcRow {
   "Action Status": string;
   "Previous Action Info": string;
   "Previous Price Info": string;
+  "Latest RTC End"?: string;
+  "Latest RTC Info"?: string;
   EmailSent: number;
   StaffName?: string;
   Week: string;

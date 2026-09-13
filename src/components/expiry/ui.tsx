@@ -53,13 +53,7 @@ export function Panel({
   );
 }
 
-export function PanelBody({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function PanelBody({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("p-4", className)}>{children}</div>;
 }
 
@@ -106,7 +100,7 @@ export function Kpi({
           <span
             className={cn(
               "grid size-7 place-items-center rounded-lg border",
-              TONES[tone] || TONES['brand'],
+              TONES[tone] || TONES["brand"],
             )}
           >
             {icon}
@@ -122,11 +116,7 @@ export function Kpi({
 }
 
 export function KpiGrid({ children }: { children: ReactNode }) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {children}
-    </div>
-  );
+  return <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>;
 }
 
 /* ───────────── Badges ───────────── */
@@ -137,7 +127,7 @@ export function RiskBadge({ bucket }: { bucket: string }) {
     <span
       className={cn(
         "inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
-        TONES[t] || TONES['na'],
+        TONES[t] || TONES["na"],
       )}
     >
       {bucket}
@@ -147,7 +137,13 @@ export function RiskBadge({ bucket }: { bucket: string }) {
 
 export function StatusBadge({ status }: { status: string }) {
   const tone =
-    status === "Action Taken" ? "low" : status === "Previously Actioned" ? "info" : "high";
+    status === "Action Taken"
+      ? "low"
+      : status === "Validity Expired"
+        ? "med"
+        : status === "Previously Actioned"
+          ? "info"
+          : "high";
   return (
     <span
       className={cn(
@@ -296,7 +292,8 @@ export function MultiSelect({
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  const label = value.length === 0 ? allLabel : value.length === 1 ? value[0] : `${value.length} selected`;
+  const label =
+    value.length === 0 ? allLabel : value.length === 1 ? value[0] : `${value.length} selected`;
 
   return (
     <div ref={ref} className={cn("relative min-w-[10rem]", className)}>
@@ -327,9 +324,7 @@ export function MultiSelect({
                 className="accent-primary"
                 checked={value.includes(o)}
                 onChange={(e) =>
-                  onChange(
-                    e.target.checked ? [...value, o] : value.filter((x) => x !== o),
-                  )
+                  onChange(e.target.checked ? [...value, o] : value.filter((x) => x !== o))
                 }
               />
               <span className="truncate">{o}</span>
@@ -460,7 +455,10 @@ export function Th({
   if (!sortKey || !toggle) return <th className={className}>{label}</th>;
   const active = sort?.key === sortKey;
   return (
-    <th className={cn("cursor-pointer select-none", className)} onClick={() => toggle(sortKey, type)}>
+    <th
+      className={cn("cursor-pointer select-none", className)}
+      onClick={() => toggle(sortKey, type)}
+    >
       <span className="inline-flex items-center gap-1">
         {label}
         <ChevronsUpDown
@@ -510,9 +508,7 @@ export function BarChart({
     <div className="flex flex-col gap-2.5">
       {data.map((d) => (
         <div key={d.label} className="grid grid-cols-[7rem_1fr_3rem] items-center gap-3">
-          <span className="truncate text-[11px] font-medium text-muted-foreground">
-            {d.label}
-          </span>
+          <span className="truncate text-[11px] font-medium text-muted-foreground">{d.label}</span>
           <div className="h-2.5 overflow-hidden rounded-full bg-surface-2">
             <div
               className={cn(
@@ -558,10 +554,7 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className={cn(
-          "my-8 w-full rounded-2xl border border-border bg-card shadow-lift",
-          width,
-        )}
+        className={cn("my-8 w-full rounded-2xl border border-border bg-card shadow-lift", width)}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start gap-3 border-b border-border px-5 py-4">

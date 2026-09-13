@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Mail, Send } from "lucide-react";
 import { AppShell } from "@/components/expiry/app-shell";
 import {
@@ -13,11 +13,20 @@ import {
   Select,
   StoreDisplay,
   TableWrap,
+  Tick,
 } from "@/components/expiry/ui";
 import { useApp } from "@/lib/expiry/app-context";
 import { useFilters } from "@/lib/expiry/filters";
 import { downloadSheet } from "@/lib/expiry/export";
-import { F } from "@/lib/expiry/utils";
+import {
+  F,
+  applyBuyerTemplate,
+  currentMonthYm,
+  currentWeekLabel,
+  getBuyerSettings,
+  ymLabel,
+  type BuyerSettings,
+} from "@/lib/expiry/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/notify")({
@@ -39,27 +48,51 @@ export const Route = createFileRoute("/notify")({
   component: NotifyPage,
 });
 
-type Mode = "all" | "rtc" | "transfer";
-
 export function NotifyPage() {
   const { emailMap, codeToStore } = useApp();
   const f = useFilters();
-  const [mode, setMode] = useState<Mode>("all");
+  const [settings, setSettings] = useState<BuyerSettings>(getBuyerSettings());
+  const [rtc, setRtc] = useState(settings.rtc);
+  const [transfer, setTransfer] = useState(settings.transfer);
+  const [monitor, setMonitor] = useState(settings.monitor);
+  const [clear, setClear] = useState(settings.clear);
+
+  useEffect(() => {
+    const s = getBuyerSettings();
+    setSettings(s);
+    setRtc(s.rtc);
+    setTransfer(s.transfer);
+    setMonitor(s.monitor);
+    setClear(s.clear);
+  }, []);
+
+  // default to the current month/week, matching the original dashboard
+  useEffect(() => {
+    if (!f.ym) f.setYm(currentMonthYm());
+    if (!f.week) f.setWeek(currentWeekLabel());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const rows = useMemo(() => {
     if (!f.code) return [];
-    let d = f.filtered.filter((r) => F.comp(r));
-    if (mode === "rtc") d = d.filter((r) => !!r["RTC Price"]);
-    if (mode === "transfer") d = d.filter((r) => !!r["Transfer To"]);
-    return d;
-  }, [f.filtered, f.code, mode]);
+    return f.filtered.filter((r) => {
+      if (!F.comp(r)) return false;
+      const act = r["Action Taken"] || "";
+      if (rtc && act.includes("RTC Price Change")) return true;
+      if (transfer && act.includes("Store Transfer")) return true;
+      if (monitor && act.includes("Monitor")) return true;
+      if (clear && act.includes("Clear In Normal Price")) return true;
+      return false;
+    });
+  }, [f.filtered, f.code, rtc, transfer, monitor, clear]);
 
   const cols = useMemo(() => {
     const base = ["Article", "Barcode", "Description", "Expiry Date"];
-    if (mode === "transfer") return [...base, "Transfer To", "Transfer Qty"];
-    if (mode === "rtc") return [...base, "RTC Price", "Start", "End"];
-    return [...base, "RTC Price", "Start", "End", "Transfer To", "Transfer Qty"];
-  }, [mode]);
+    const out = [...base];
+    if (rtc) out.push("RTC Price", "Start", "End");
+    if (transfer) out.push("Transfer To", "Transfer Qty");
+    return out;
+  }, [rtc, transfer]);
 
   const recipients = emailMap.find((e) => e.storeCode === f.code);
 
@@ -69,6 +102,7 @@ export function NotifyPage() {
       Barcode: r.Barcode,
       Description: r.Description,
       "Expiry Date": r.ExpiryDate,
+      "Action Taken": r["Action Taken"],
       "RTC Price": r["RTC Price"],
       Start: r.Start,
       End: r.End,
@@ -97,8 +131,8 @@ export function NotifyPage() {
           r.Barcode,
           r.Description,
           r.ExpiryDate,
-          ...(mode !== "transfer" ? [r["RTC Price"], r.Start, r.End] : []),
-          ...(mode !== "rtc" ? [r["Transfer To"], r["Transfer Qty"]] : []),
+          ...(rtc ? [r["RTC Price"], r.Start, r.End] : []),
+          ...(transfer ? [r["Transfer To"], r["Transfer Qty"]] : []),
         ].join("\t"),
       ),
     ].join("\n");
@@ -111,11 +145,26 @@ export function NotifyPage() {
       toast.error("Select a store first");
       return;
     }
-    const subject = encodeURIComponent(
-      `Expiry actions — ${codeToStore[f.code] || f.code} (${rows.length} items)`,
-    );
-    const body = encodeURIComponent(
-      rows
+    if (!rows.length) {
+      toast.error("No actioned items to send");
+      return;
+    }
+    if (
+      settings.confirm &&
+      !window.confirm(
+        `Open Notify Store email for ${codeToStore[f.code] || f.code}?\n\n${rows.length} actioned item(s) will be copied.`,
+      )
+    ) {
+      return;
+    }
+    const ctx = {
+      store: codeToStore[f.code] || f.code,
+      code: f.code,
+      week: f.week || "All Weeks",
+      month: f.ym ? ymLabel(f.ym) : "All Months",
+      count: rows.length,
+      date: new Date().toLocaleDateString(),
+      body: rows
         .slice(0, 40)
         .map(
           (r) =>
@@ -124,10 +173,15 @@ export function NotifyPage() {
             (r["Transfer To"] ? ` · transfer to ${r["Transfer To"]}` : ""),
         )
         .join("\n"),
-    );
-    window.location.href = `mailto:${recipients?.toEmail || ""}?cc=${
-      recipients?.ccEmail || ""
-    }&subject=${subject}&body=${body}`;
+    };
+    const subject = applyBuyerTemplate(settings.subject, ctx);
+    const body = applyBuyerTemplate(settings.body, ctx);
+    const cc = settings.cc
+      ? `&cc=${encodeURIComponent(settings.cc)}`
+      : recipients?.ccEmail
+        ? `&cc=${encodeURIComponent(recipients.ccEmail)}`
+        : "";
+    window.location.href = `mailto:${recipients?.toEmail || ""}?subject=${encodeURIComponent(subject)}${cc}&body=${encodeURIComponent(body)}`;
   };
 
   return (
@@ -175,18 +229,18 @@ export function NotifyPage() {
               allLabel="All departments"
             />
           </Field>
-          <Field label="Action type">
-            <Select value={mode} onChange={(v) => setMode(v as Mode)}>
-              <option value="all">All actions</option>
-              <option value="rtc">RTC price change</option>
-              <option value="transfer">Store transfer</option>
-            </Select>
-          </Field>
           <Button variant="ghost" onClick={f.reset}>
             Reset
           </Button>
         </FilterBar>
         <Chips items={f.activeChips} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Tick checked={rtc} onChange={setRtc} label="RTC Price Change" />
+        <Tick checked={transfer} onChange={setTransfer} label="Store Transfer" />
+        <Tick checked={monitor} onChange={setMonitor} label="Monitor" />
+        <Tick checked={clear} onChange={setClear} label="Clear In Normal Price" />
       </div>
 
       {f.code && (
@@ -195,7 +249,7 @@ export function NotifyPage() {
           <span className="text-muted-foreground">To</span>
           <strong className="text-foreground">{recipients?.toEmail || "not configured"}</strong>
           <span className="text-muted-foreground">Cc</span>
-          <strong className="text-foreground">{recipients?.ccEmail || "—"}</strong>
+          <strong className="text-foreground">{settings.cc || recipients?.ccEmail || "—"}</strong>
         </div>
       )}
 
@@ -239,7 +293,7 @@ export function NotifyPage() {
                   <td className="font-mono">{r.Barcode || "—"}</td>
                   <td className="max-w-[20rem] truncate">{r.Description || "—"}</td>
                   <td className="font-mono">{r.ExpiryDate || "—"}</td>
-                  {mode !== "transfer" && (
+                  {rtc && (
                     <>
                       <td className="font-mono">
                         {r["RTC Price"] ? `AED ${r["RTC Price"]}` : "—"}
@@ -248,7 +302,7 @@ export function NotifyPage() {
                       <td className="font-mono">{r.End || "—"}</td>
                     </>
                   )}
-                  {mode !== "rtc" && (
+                  {transfer && (
                     <>
                       <td>{r["Transfer To"] || "—"}</td>
                       <td className="font-mono">{r["Transfer Qty"] || "—"}</td>

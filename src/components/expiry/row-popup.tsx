@@ -1,31 +1,16 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  CalendarClock,
-  Check,
-  Info,
-  Pencil,
-  Trash2,
-  Zap,
-} from "lucide-react";
+import { CalendarClock, Check, Info, Pencil, Trash2, Zap } from "lucide-react";
 import { CF_API, apiFetch } from "@/lib/expiry/api";
 import { useApp } from "@/lib/expiry/app-context";
 import type { ProcRow } from "@/lib/expiry/types";
-import {
-  ACTIONS,
-  calcBucket,
-  formatDateToStr,
-  parseDate,
-  today,
-} from "@/lib/expiry/utils";
+import { ACTIONS, calcBucket, formatDateToStr, parseDate, today } from "@/lib/expiry/utils";
 import { Button, Modal, RiskBadge, StatusBadge, TextInput } from "./ui";
 
 function Pf({ k, v }: { k: string; v?: string | number | null }) {
   return (
     <div className="rounded-xl border border-border bg-surface-2/60 px-3 py-2">
-      <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
-        {k}
-      </p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted-foreground">{k}</p>
       <p className="mt-0.5 break-words text-xs font-semibold text-foreground">
         {v === "" || v === null || v === undefined ? "—" : v}
       </p>
@@ -36,13 +21,7 @@ function Pf({ k, v }: { k: string; v?: string | number | null }) {
 type EditMode = "rtc" | "transfer" | "record" | null;
 
 /** Detail popup for a single row — with inline edit + delete. */
-export function RowPopup({
-  row,
-  onClose,
-}: {
-  row: ProcRow | null;
-  onClose: () => void;
-}) {
+export function RowPopup({ row, onClose }: { row: ProcRow | null; onClose: () => void }) {
   const { isAdmin, loadAll, setProc } = useApp();
   const [mode, setMode] = useState<EditMode>(null);
   const [busy, setBusy] = useState(false);
@@ -76,9 +55,7 @@ export function RowPopup({
           prev.map((p) => {
             if (p._idx !== row._idx) return p;
             const d = parseDate(f.expiry);
-            const days = d
-              ? Math.round((d.getTime() - today().getTime()) / 86400000)
-              : p.DaysLeft;
+            const days = d ? Math.round((d.getTime() - today().getTime()) / 86400000) : p.DaysLeft;
             return {
               ...p,
               Stock: f.stock,
@@ -136,9 +113,9 @@ export function RowPopup({
   const runDelete = async () => {
     setBusy(true);
     try {
-      const out = await apiFetch(
-        `${CF_API}?action=deleteRow&rowIndex=${row._idx}`,
-      ).then((r) => r.json());
+      const out = await apiFetch(`${CF_API}?action=deleteRow&rowIndex=${row._idx}`).then((r) =>
+        r.json(),
+      );
       if (!out.success) throw new Error(out.message || "Failed to delete");
       toast.success("Item deleted");
       setDel(false);
@@ -337,13 +314,7 @@ export function RowPopup({
   );
 }
 
-export function Labeled({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+export function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
       <span className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted-foreground">
@@ -420,9 +391,7 @@ export function ConfirmActionModal({
         }).then((r) => r.json()),
       ),
     );
-    const ok = res.filter(
-      (r) => r.status === "fulfilled" && r.value?.success !== false,
-    ).length;
+    const ok = res.filter((r) => r.status === "fulfilled" && r.value?.success !== false).length;
     const map = new Map(updates.map((u) => [u.r._idx, u]));
     setProc((prev) =>
       prev.map((p) => {
@@ -500,8 +469,8 @@ export function ConfirmActionModal({
         )}
         {(action === "Monitor" || action === "Clear In Normal Price") && (
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <CalendarClock className="size-4" /> No extra details needed — this marks
-            the selected items as actioned today.
+            <CalendarClock className="size-4" /> No extra details needed — this marks the selected
+            items as actioned today.
           </p>
         )}
       </div>

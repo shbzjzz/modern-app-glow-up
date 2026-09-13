@@ -12,11 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AreaViewRouteImport } from './routes/area-view'
 import { Route as ArticlesRouteImport } from './routes/articles'
+import { Route as AttentionRouteImport } from './routes/attention'
 import { Route as BuyerActionRouteImport } from './routes/buyer-action'
 import { Route as InspectorRouteImport } from './routes/inspector'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NotifyRouteImport } from './routes/notify'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as SubmissionRouteImport } from './routes/submission'
 
@@ -35,9 +38,19 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AreaViewRoute = AreaViewRouteImport.update({
+  id: '/area-view',
+  path: '/area-view',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArticlesRoute = ArticlesRouteImport.update({
   id: '/articles',
   path: '/articles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AttentionRoute = AttentionRouteImport.update({
+  id: '/attention',
+  path: '/attention',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuyerActionRoute = BuyerActionRouteImport.update({
@@ -60,6 +73,11 @@ const NotifyRoute = NotifyRouteImport.update({
   path: '/notify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -75,11 +93,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
   '/admin': typeof AdminRoute
+  '/area-view': typeof AreaViewRoute
   '/articles': typeof ArticlesRoute
+  '/attention': typeof AttentionRoute
   '/buyer-action': typeof BuyerActionRoute
   '/inspector': typeof InspectorRoute
   '/login': typeof LoginRoute
   '/notify': typeof NotifyRoute
+  '/settings': typeof SettingsRoute
   '/stores': typeof StoresRoute
   '/submission': typeof SubmissionRoute
 }
@@ -87,11 +108,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
   '/admin': typeof AdminRoute
+  '/area-view': typeof AreaViewRoute
   '/articles': typeof ArticlesRoute
+  '/attention': typeof AttentionRoute
   '/buyer-action': typeof BuyerActionRoute
   '/inspector': typeof InspectorRoute
   '/login': typeof LoginRoute
   '/notify': typeof NotifyRoute
+  '/settings': typeof SettingsRoute
   '/stores': typeof StoresRoute
   '/submission': typeof SubmissionRoute
 }
@@ -100,11 +124,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
   '/admin': typeof AdminRoute
+  '/area-view': typeof AreaViewRoute
   '/articles': typeof ArticlesRoute
+  '/attention': typeof AttentionRoute
   '/buyer-action': typeof BuyerActionRoute
   '/inspector': typeof InspectorRoute
   '/login': typeof LoginRoute
   '/notify': typeof NotifyRoute
+  '/settings': typeof SettingsRoute
   '/stores': typeof StoresRoute
   '/submission': typeof SubmissionRoute
 }
@@ -114,11 +141,14 @@ export interface FileRouteTypes {
     | '/'
     | '/actions'
     | '/admin'
+    | '/area-view'
     | '/articles'
+    | '/attention'
     | '/buyer-action'
     | '/inspector'
     | '/login'
     | '/notify'
+    | '/settings'
     | '/stores'
     | '/submission'
   fileRoutesByTo: FileRoutesByTo
@@ -126,11 +156,14 @@ export interface FileRouteTypes {
     | '/'
     | '/actions'
     | '/admin'
+    | '/area-view'
     | '/articles'
+    | '/attention'
     | '/buyer-action'
     | '/inspector'
     | '/login'
     | '/notify'
+    | '/settings'
     | '/stores'
     | '/submission'
   id:
@@ -138,11 +171,14 @@ export interface FileRouteTypes {
     | '/'
     | '/actions'
     | '/admin'
+    | '/area-view'
     | '/articles'
+    | '/attention'
     | '/buyer-action'
     | '/inspector'
     | '/login'
     | '/notify'
+    | '/settings'
     | '/stores'
     | '/submission'
   fileRoutesById: FileRoutesById
@@ -151,11 +187,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
   AdminRoute: typeof AdminRoute
+  AreaViewRoute: typeof AreaViewRoute
   ArticlesRoute: typeof ArticlesRoute
+  AttentionRoute: typeof AttentionRoute
   BuyerActionRoute: typeof BuyerActionRoute
   InspectorRoute: typeof InspectorRoute
   LoginRoute: typeof LoginRoute
   NotifyRoute: typeof NotifyRoute
+  SettingsRoute: typeof SettingsRoute
   StoresRoute: typeof StoresRoute
   SubmissionRoute: typeof SubmissionRoute
 }
@@ -183,11 +222,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/area-view': {
+      id: '/area-view'
+      path: '/area-view'
+      fullPath: '/area-view'
+      preLoaderRoute: typeof AreaViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/articles': {
       id: '/articles'
       path: '/articles'
       fullPath: '/articles'
       preLoaderRoute: typeof ArticlesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attention': {
+      id: '/attention'
+      path: '/attention'
+      fullPath: '/attention'
+      preLoaderRoute: typeof AttentionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/buyer-action': {
@@ -218,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stores': {
       id: '/stores'
       path: '/stores'
@@ -239,11 +299,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
   AdminRoute: AdminRoute,
+  AreaViewRoute: AreaViewRoute,
   ArticlesRoute: ArticlesRoute,
+  AttentionRoute: AttentionRoute,
   BuyerActionRoute: BuyerActionRoute,
   InspectorRoute: InspectorRoute,
   LoginRoute: LoginRoute,
   NotifyRoute: NotifyRoute,
+  SettingsRoute: SettingsRoute,
   StoresRoute: StoresRoute,
   SubmissionRoute: SubmissionRoute,
 }

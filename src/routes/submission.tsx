@@ -54,13 +54,10 @@ function SubmissionPage() {
 
   const rows = useMemo(() => {
     const scoped = f.base.filter(
-      (r) =>
-        (!f.ym || r["Submission Month"] === f.ym) && (!f.week || r.Week === f.week),
+      (r) => (!f.ym || r["Submission Month"] === f.ym) && (!f.week || r.Week === f.week),
     );
     const byStore = new Map<string, number>();
-    scoped.forEach((r) =>
-      byStore.set(r.StoreCode, (byStore.get(r.StoreCode) || 0) + 1),
-    );
+    scoped.forEach((r) => byStore.set(r.StoreCode, (byStore.get(r.StoreCode) || 0) + 1));
     const lastSeen = new Map<string, string>();
     scoped.forEach((r) => {
       const cur = lastSeen.get(r.StoreCode);

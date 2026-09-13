@@ -111,7 +111,9 @@ function ArticlesPage() {
                 <tr
                   key={a.article}
                   className="cursor-pointer"
-                  onClick={() => setDrill({ label: `${a.article} · ${a.description}`, rows: a.rows })}
+                  onClick={() =>
+                    setDrill({ label: `${a.article} · ${a.description}`, rows: a.rows })
+                  }
                 >
                   <td className="font-mono font-semibold">{a.article}</td>
                   <td className="max-w-[20rem] truncate">{a.description}</td>

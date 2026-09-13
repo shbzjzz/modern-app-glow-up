@@ -64,14 +64,15 @@ function StoresPage() {
       done: rows.filter(F.comp).length,
       crit: rows.filter((r) => F.b7(r) || F.expired(r)).length,
       soldout: rows.filter(F.soldout).length,
-      compliance: rows.length
-        ? Math.round((rows.filter(F.comp).length / rows.length) * 100)
-        : 0,
+      compliance: rows.length ? Math.round((rows.filter(F.comp).length / rows.length) * 100) : 0,
       rows,
     }));
   }, [f.filtered, codeToStore]);
 
-  const sorted = useSorted(summary as unknown as Record<string, unknown>[], sort) as unknown as typeof summary;
+  const sorted = useSorted(
+    summary as unknown as Record<string, unknown>[],
+    sort,
+  ) as unknown as typeof summary;
 
   const exportSummary = () => {
     const data = sorted.map(({ rows: _rows, ...rest }) => rest);
@@ -106,7 +107,13 @@ function StoresPage() {
                 <Th label="Actioned" sortKey="done" type="num" sort={sort} toggle={toggle} />
                 <Th label="Critical" sortKey="crit" type="num" sort={sort} toggle={toggle} />
                 <Th label="Sold out" sortKey="soldout" type="num" sort={sort} toggle={toggle} />
-                <Th label="Compliance" sortKey="compliance" type="num" sort={sort} toggle={toggle} />
+                <Th
+                  label="Compliance"
+                  sortKey="compliance"
+                  type="num"
+                  sort={sort}
+                  toggle={toggle}
+                />
               </tr>
             </thead>
             <tbody>
