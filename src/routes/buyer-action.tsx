@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Download, Zap } from "lucide-react";
+import { ArrowLeftRight, Download, RotateCcw, Tag, Zap } from "lucide-react";
 import { AppShell } from "@/components/expiry/app-shell";
 import { ConfirmActionModal, RowPopup } from "@/components/expiry/row-popup";
 import {
@@ -60,11 +60,23 @@ function BuyerActionPage() {
     rows as unknown as Record<string, unknown>[],
     sort,
   ) as unknown as ProcRow[];
-  const selectedRows = useMemo(
-    () => rows.filter((r) => selected.has(r._idx)),
-    [rows, selected],
-  );
+  const selectedRows = useMemo(() => rows.filter((r) => selected.has(r._idx)), [rows, selected]);
   const allChecked = rows.length > 0 && rows.every((r) => selected.has(r._idx));
+
+  const actionedInScope = useMemo(() => f.filtered.filter(F.comp), [f.filtered]);
+  const transferItems = useMemo(
+    () => actionedInScope.filter((r) => (r["Action Taken"] || "").includes("Store Transfer")),
+    [actionedInScope],
+  );
+  const rtcItems = useMemo(
+    () => actionedInScope.filter((r) => (r["Action Taken"] || "").includes("RTC Price Change")),
+    [actionedInScope],
+  );
+  const clearItems = useMemo(
+    () =>
+      actionedInScope.filter((r) => (r["Action Taken"] || "").includes("Clear In Normal Price")),
+    [actionedInScope],
+  );
 
   const toggleAll = () =>
     setSelected((prev) => {
@@ -214,6 +226,164 @@ function BuyerActionPage() {
           </TableWrap>
         ) : (
           <EmptyState title="Queue is clear" sub="No items awaiting your decision." />
+        )}
+      </Panel>
+
+      <Panel
+        title="Store transfer"
+        sub="Items marked for transfer to other stores"
+        icon={<ArrowLeftRight className="size-4 text-primary" />}
+        badge={`${transferItems.length}`}
+        actions={
+          <Button
+            variant="export"
+            onClick={() => {
+              const ok = downloadSheet(
+                actionedInScope.map(flatRow),
+                EXP_COLS,
+                "Buyer_Completed_Actions",
+              );
+              if (!ok) toast.error("No completed actions to export");
+            }}
+          >
+            <Download className="size-3.5" /> Export completed
+          </Button>
+        }
+      >
+        {transferItems.length ? (
+          <TableWrap maxHeight="18rem">
+            <thead>
+              <tr>
+                <th>Week</th>
+                <th>Month</th>
+                <th>Store</th>
+                <th>Article</th>
+                <th>Description</th>
+                <th>Dept</th>
+                <th>Stock</th>
+                <th>Expiry</th>
+                <th>Transfer to</th>
+                <th>Transfer qty</th>
+                <th>Staff</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transferItems.map((r) => (
+                <tr key={r._idx} className="cursor-pointer" onClick={() => setPopRow(r)}>
+                  <td className="font-mono">{r.Week || "—"}</td>
+                  <td>{r["Sub Month Display"] || "—"}</td>
+                  <td className="font-semibold">{r.StoreCode || "—"}</td>
+                  <td className="font-mono font-semibold">{r.Article || "—"}</td>
+                  <td className="max-w-[14rem] truncate">{r.Description || "—"}</td>
+                  <td>{r.Department || "—"}</td>
+                  <td className="tabular-nums">{r.Stock || "—"}</td>
+                  <td className="font-mono">{r.ExpiryDate || "—"}</td>
+                  <td className="text-[11px]">{r["Transfer To"] || "—"}</td>
+                  <td className="font-mono">{r["Transfer Qty"] || "—"}</td>
+                  <td className="font-mono text-[11px]">{r.StaffName || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </TableWrap>
+        ) : (
+          <EmptyState title="No transfers recorded" icon={<ArrowLeftRight className="size-5" />} />
+        )}
+      </Panel>
+
+      <Panel
+        title="RTC price change"
+        sub="Items with Reduced To Clear pricing"
+        icon={<Tag className="size-4 text-crit" />}
+        badge={`${rtcItems.length}`}
+      >
+        {rtcItems.length ? (
+          <TableWrap maxHeight="18rem">
+            <thead>
+              <tr>
+                <th>Week</th>
+                <th>Month</th>
+                <th>Store</th>
+                <th>Article</th>
+                <th>Description</th>
+                <th>Dept</th>
+                <th>Stock</th>
+                <th>Expiry</th>
+                <th>RTC price</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Staff</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rtcItems.map((r) => (
+                <tr key={r._idx} className="cursor-pointer" onClick={() => setPopRow(r)}>
+                  <td className="font-mono">{r.Week || "—"}</td>
+                  <td>{r["Sub Month Display"] || "—"}</td>
+                  <td className="font-semibold">{r.StoreCode || "—"}</td>
+                  <td className="font-mono font-semibold">{r.Article || "—"}</td>
+                  <td className="max-w-[14rem] truncate">{r.Description || "—"}</td>
+                  <td>{r.Department || "—"}</td>
+                  <td className="tabular-nums">{r.Stock || "—"}</td>
+                  <td className="font-mono">{r.ExpiryDate || "—"}</td>
+                  <td className="font-mono">{r["RTC Price"] ? `AED ${r["RTC Price"]}` : "—"}</td>
+                  <td className="font-mono text-[11px]">{r.Start || "—"}</td>
+                  <td className="font-mono text-[11px]">{r.End || "—"}</td>
+                  <td className="font-mono text-[11px]">{r.StaffName || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </TableWrap>
+        ) : (
+          <EmptyState title="No RTC changes recorded" icon={<Tag className="size-5" />} />
+        )}
+      </Panel>
+
+      <Panel
+        title="Clear in normal price"
+        sub="Items cleared back to normal price"
+        icon={<RotateCcw className="size-4 text-low" />}
+        badge={`${clearItems.length}`}
+      >
+        {clearItems.length ? (
+          <TableWrap maxHeight="18rem">
+            <thead>
+              <tr>
+                <th>Week</th>
+                <th>Month</th>
+                <th>Store</th>
+                <th>Article</th>
+                <th>Description</th>
+                <th>Dept</th>
+                <th>Stock</th>
+                <th>Expiry</th>
+                <th>Action date</th>
+                <th>Staff</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clearItems.map((r) => (
+                <tr key={r._idx} className="cursor-pointer" onClick={() => setPopRow(r)}>
+                  <td className="font-mono">{r.Week || "—"}</td>
+                  <td>{r["Sub Month Display"] || "—"}</td>
+                  <td className="font-semibold">{r.StoreCode || "—"}</td>
+                  <td className="font-mono font-semibold">{r.Article || "—"}</td>
+                  <td className="max-w-[14rem] truncate">{r.Description || "—"}</td>
+                  <td>{r.Department || "—"}</td>
+                  <td className="tabular-nums">{r.Stock || "—"}</td>
+                  <td className="font-mono">{r.ExpiryDate || "—"}</td>
+                  <td className="font-mono text-[11px]">
+                    {String(r["Action Date"] || "").slice(0, 10) || "—"}
+                  </td>
+                  <td className="font-mono text-[11px]">{r.StaffName || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </TableWrap>
+        ) : (
+          <EmptyState
+            title="No clear-in-normal-price items recorded"
+            icon={<RotateCcw className="size-5" />}
+          />
         )}
       </Panel>
 

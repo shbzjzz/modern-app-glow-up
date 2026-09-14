@@ -3,19 +3,36 @@ import type { ProcRow } from "./types";
 import { formatDateToStr, parseDate } from "./utils";
 
 export const EXP_COLS = [
-  "RowIndex","Store","StoreCode","Article","Barcode","Description","Department","Stock",
-  "ExpiryDate","DaysLeft","Action Status","Previous Action Info","Previous Price Info",
-  "Action Taken","RTC Price","Start","End","Transfer To","Transfer Qty","Action Date",
-  "Week","Submission Month","Sub Month Display","Expiry Risk Bucket","Year",
+  "RowIndex",
+  "Store",
+  "StoreCode",
+  "Article",
+  "Barcode",
+  "Description",
+  "Department",
+  "Stock",
+  "ExpiryDate",
+  "DaysLeft",
+  "Action Status",
+  "Previous Action Info",
+  "Previous Price Info",
+  "Action Taken",
+  "RTC Price",
+  "Start",
+  "End",
+  "Transfer To",
+  "Transfer Qty",
+  "Action Date",
+  "Week",
+  "Submission Month",
+  "Sub Month Display",
+  "Expiry Risk Bucket",
+  "Year",
 ];
 
 type Sheet = ReturnType<typeof XLSX.utils.json_to_sheet>;
 
-export function autoFitAndTable(
-  ws: Sheet,
-  data: Record<string, unknown>[],
-  cols: string[],
-) {
+export function autoFitAndTable(ws: Sheet, data: Record<string, unknown>[], cols: string[]) {
   ws["!cols"] = cols.map((col) => {
     let maxLen = col.length;
     data.forEach((row) => {
@@ -61,7 +78,7 @@ export function flatRow(r: ProcRow): Record<string, unknown> {
       val = val === "" || val === null ? "" : Number(val);
     } else if (dateCols.includes(c)) {
       const parsed = parseDate(val);
-      val = parsed ? formatDateToStr(parsed) : (val || "");
+      val = parsed ? formatDateToStr(parsed) : val || "";
     }
     o[c] = val;
   });
@@ -75,9 +92,7 @@ export function downloadSheet(
   sheetName = "Data",
 ) {
   if (!data.length) return false;
-  const useCols = cols.length
-    ? cols
-    : Object.keys(data[0] ?? {}).filter((c) => !c.startsWith("_"));
+  const useCols = cols.length ? cols : Object.keys(data[0] ?? {}).filter((c) => !c.startsWith("_"));
   const ws = XLSX.utils.json_to_sheet(data, { header: useCols });
   autoFitAndTable(ws, data, useCols);
   const wb = XLSX.utils.book_new();

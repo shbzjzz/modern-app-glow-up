@@ -7,9 +7,7 @@ export function setUnauthorizedHandler(fn: () => void) {
 
 export function readToken(): string | null {
   if (typeof window === "undefined") return null;
-  return (
-    localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token")
-  );
+  return localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
 }
 
 export async function apiFetch(url: string, options: RequestInit = {}) {
@@ -36,7 +34,5 @@ export function apiPost<T = unknown>(action: string, body?: unknown): Promise<T>
     init.headers = { "Content-Type": "application/json" };
     init.body = JSON.stringify(body);
   }
-  return apiFetch(`${CF_API}?action=${action}`, init).then(
-    (r) => r.json() as Promise<T>,
-  );
+  return apiFetch(`${CF_API}?action=${action}`, init).then((r) => r.json() as Promise<T>);
 }

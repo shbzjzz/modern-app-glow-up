@@ -10,7 +10,14 @@ import {
 import { toast } from "sonner";
 import { CF_API, apiFetch, setUnauthorizedHandler } from "./api";
 import type { AppUser, EmailMapEntry, ProcRow, RawRow, StoreRef } from "./types";
-import { applyPreviouslyActioned, processRows } from "./utils";
+import {
+  applyPreviouslyActioned,
+  getBuyerVisibleProc,
+  getDisabledArticles,
+  processRows,
+  saveDisabledArticles,
+  type DisabledArticle,
+} from "./utils";
 
 type Status = "loading" | "ok" | "err";
 
@@ -37,8 +44,12 @@ interface AppState {
   setSelected: React.Dispatch<React.SetStateAction<Set<number>>>;
   isAdmin: boolean;
   isAreaManager: boolean;
+  isBuyer: boolean;
   userStores: string[];
   userDepartments: string[];
+  disabledArticles: DisabledArticle[];
+  setDisabledArticles: (v: DisabledArticle[]) => void;
+  buyerVisibleProc: ProcRow[];
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -64,6 +75,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lastRefresh, setLastRefresh] = useState("—");
   const [density, setDensity] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [disabledArticles, setDisabledArticlesState] = useState<DisabledArticle[]>([]);
+
+  useEffect(() => {
+    setDisabledArticlesState(getDisabledArticles());
+  }, []);
+
+  const setDisabledArticles = useCallback((v: DisabledArticle[]) => {
+    saveDisabledArticles(v);
+    setDisabledArticlesState(v);
+  }, []);
   const [status, setStatus] = useState<AppState["status"]>({
     e: ["loading", "Waiting for data…"],
     l: ["loading", "Waiting for actions…"],
@@ -84,11 +105,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setUnauthorizedHandler(logout);
-    const t =
-      localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
-    const uRaw =
-      localStorage.getItem("current_user") ||
-      sessionStorage.getItem("current_user");
+    const t = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
+    const uRaw = localStorage.getItem("current_user") || sessionStorage.getItem("current_user");
     if (t) setToken(t);
     if (uRaw && uRaw !== "null") {
       try {
@@ -111,9 +129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [er, sr, emr] = await Promise.allSettled([
       apiFetch(CF_API + "?action=allData&_t=" + Date.now()).then((r) => r.json()),
       apiFetch(CF_API + "?action=stores&_t=" + Date.now()).then((r) => r.json()),
-      apiFetch(CF_API + "?action=getEmailMap&_t=" + Date.now()).then((r) =>
-        r.json(),
-      ),
+      apiFetch(CF_API + "?action=getEmailMap&_t=" + Date.now()).then((r) => r.json()),
     ]);
 
     const nextStatus: AppState["status"] = {
@@ -136,12 +152,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
       nextStatus.s = ["ok", `${storeList.length} stores`];
     }
-    if (emr.status === "fulfilled")
-      setEmailMap(Array.isArray(emr.value) ? emr.value : []);
+    if (emr.status === "fulfilled") setEmailMap(Array.isArray(emr.value) ? emr.value : []);
 
     if (er.status === "fulfilled" && er.value?.rows) {
       const rows: RawRow[] = er.value.rows;
-      const actioned = rows.filter((r) => r['ActionTaken']);
+      const actioned = rows.filter((r) => r["ActionTaken"]);
       const processed = applyPreviouslyActioned(processRows(rows));
       processed.forEach((r) => {
         if (r.StoreCode && r.Store && !map[r.StoreCode]) map[r.StoreCode] = r.Store;
@@ -170,48 +185,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (token) void loadAll();
   }, [token, loadAll]);
 
-  const login = useCallback(
-    async (username: string, password: string, remember: boolean) => {
-      const res = await fetch(CF_API + "?action=login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const out = await res.json();
-      if (out.success) {
-        const store = remember ? localStorage : sessionStorage;
-        store.setItem("auth_token", out.token);
-        store.setItem("current_user", JSON.stringify(out.user));
-        setToken(out.token);
-        setUser(out.user);
-        toast.success(`Welcome back, ${out.user?.username || "user"}!`);
-        return true;
-      }
-      toast.error(out.message || "Login failed");
-      return false;
-    },
-    [],
-  );
+  const login = useCallback(async (username: string, password: string, remember: boolean) => {
+    const res = await fetch(CF_API + "?action=login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const out = await res.json();
+    if (out.success) {
+      const store = remember ? localStorage : sessionStorage;
+      store.setItem("auth_token", out.token);
+      store.setItem("current_user", JSON.stringify(out.user));
+      setToken(out.token);
+      setUser(out.user);
+      toast.success(`Welcome back, ${out.user?.username || "user"}!`);
+      return true;
+    }
+    toast.error(out.message || "Login failed");
+    return false;
+  }, []);
 
   const isAdmin = !!user?.isAdmin;
   const isAreaManager =
-    !!user &&
-    !user.isAdmin &&
-    !!user.stores &&
-    user.stores.trim() !== "" &&
-    user.stores !== "ALL";
+    !!user && !user.isAdmin && !!user.stores && user.stores.trim() !== "" && user.stores !== "ALL";
+  // Matches the original app: any signed-in, non-admin, non-area-manager account is a buyer.
+  const isBuyer = !!user && !isAdmin && !isAreaManager;
+  const buyerVisibleProc = useMemo(
+    () => getBuyerVisibleProc(proc, isBuyer, disabledArticles),
+    [proc, isBuyer, disabledArticles],
+  );
   const userStores = useMemo(
     () =>
       !user?.stores || user.stores === "ALL"
         ? []
-        : user.stores.split(",").map((s) => s.trim()).filter(Boolean),
+        : user.stores
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
     [user],
   );
   const userDepartments = useMemo(
     () =>
       !user || user.isAdmin || !user.departments || user.departments === "ALL"
         ? []
-        : user.departments.split(",").map((d) => d.trim()).filter(Boolean),
+        : user.departments
+            .split(",")
+            .map((d) => d.trim())
+            .filter(Boolean),
     [user],
   );
 
@@ -238,8 +258,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelected,
     isAdmin,
     isAreaManager,
+    isBuyer,
     userStores,
     userDepartments,
+    disabledArticles,
+    setDisabledArticles,
+    buyerVisibleProc,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

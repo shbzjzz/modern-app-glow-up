@@ -33,6 +33,7 @@ import {
   Button,
   EmptyState,
 } from "@/components/expiry/ui";
+import { Link } from "@tanstack/react-router";
 import { useApp } from "@/lib/expiry/app-context";
 import { useFilters } from "@/lib/expiry/filters";
 import type { ProcRow } from "@/lib/expiry/types";
@@ -65,7 +66,7 @@ function greeting() {
 }
 
 function OverviewPage() {
-  const { user, codeToStore } = useApp();
+  const { user, codeToStore, isBuyer } = useApp();
   const f = useFilters();
   const d = f.filtered;
   const [drill, setDrill] = useState<{ title: string; rows: ProcRow[] } | null>(null);
@@ -120,10 +121,7 @@ function OverviewPage() {
   const open = (title: string, rows: ProcRow[]) => setDrill({ title, rows });
 
   return (
-    <AppShell
-      title="Overview"
-      subtitle="Portfolio-wide expiry risk and action performance"
-    >
+    <AppShell title="Overview" subtitle="Portfolio-wide expiry risk and action performance">
       {/* Greeting */}
       <section className="overflow-hidden rounded-2xl border border-border brand-gradient p-5 text-primary-foreground shadow-lift">
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -143,9 +141,7 @@ function OverviewPage() {
           <div className="flex gap-6">
             <div>
               <p className="text-[11px] uppercase tracking-wider opacity-80">Compliance</p>
-              <p className="font-display text-3xl font-semibold tabular-nums">
-                {compliance}%
-              </p>
+              <p className="font-display text-3xl font-semibold tabular-nums">{compliance}%</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wider opacity-80">Overdue</p>
@@ -222,7 +218,43 @@ function OverviewPage() {
           sub={`${new Set(d.map((r) => r.Department).filter(Boolean)).size} departments`}
           icon={<StoreIcon className="size-3.5" />}
         />
+        <Kpi
+          label="Expiry ≤10 days"
+          tone="crit"
+          value={cnt(
+            d,
+            (r) => Number(r.DaysLeft) >= 0 && Number(r.DaysLeft) <= 10 && parseFloat(r.Stock) > 0,
+          ).toLocaleString()}
+          sub="Stock still on hand"
+          icon={<TimerReset className="size-3.5" />}
+          onClick={() =>
+            open(
+              "Expiry within 10 days",
+              d.filter(
+                (r) =>
+                  Number(r.DaysLeft) >= 0 && Number(r.DaysLeft) <= 10 && parseFloat(r.Stock) > 0,
+              ),
+            )
+          }
+        />
       </KpiGrid>
+
+      {isBuyer && (
+        <Link
+          to="/attention"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary-soft/50 px-4 py-3 text-sm font-semibold text-primary shadow-card transition hover:-translate-y-0.5 hover:shadow-lift"
+        >
+          <span className="flex items-center gap-2">
+            <ClipboardList className="size-4" /> Open your priority queue — Needs My Attention
+          </span>
+          <span className="text-xs font-medium opacity-80">
+            {cnt(f.base, (r) =>
+              ["Pending Action", "Validity Expired"].includes(r["Action Status"]),
+            )}{" "}
+            open
+          </span>
+        </Link>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Risk distribution" sub="Items by expiry bucket" badge={`${d.length} items`}>
@@ -273,7 +305,11 @@ function OverviewPage() {
               </tbody>
             </TableWrap>
           ) : (
-            <EmptyState title="No store data" sub="Adjust the filters above." icon={<StoreIcon className="size-5" />} />
+            <EmptyState
+              title="No store data"
+              sub="Adjust the filters above."
+              icon={<StoreIcon className="size-5" />}
+            />
           )}
         </Panel>
 
@@ -433,6 +469,7 @@ export function Filters({ f }: { f: ReturnType<typeof useFilters> }) {
           <Select value={f.status} onChange={f.setStatus}>
             <option value="">All statuses</option>
             <option value="Pending Action">Pending Action</option>
+            <option value="Validity Expired">Validity Expired</option>
             <option value="Previously Actioned">Previously Actioned</option>
             <option value="Action Taken">Action Taken</option>
           </Select>

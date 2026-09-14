@@ -74,8 +74,8 @@ function LoginPage() {
             Stop shrinkage before it starts.
           </h2>
           <p className="mt-3 text-sm text-sidebar-muted">
-            Live visibility of near-expiry stock across every store, with buyer actions,
-            RTC pricing and transfers tracked end to end.
+            Live visibility of near-expiry stock across every store, with buyer actions, RTC pricing
+            and transfers tracked end to end.
           </p>
           <ul className="mt-8 flex flex-col gap-3 text-sm">
             {[
@@ -110,16 +110,12 @@ function LoginPage() {
               />
             </div>
             <div>
-              <p className="font-display text-base font-semibold text-foreground">
-                Gala Markets
-              </p>
+              <p className="font-display text-base font-semibold text-foreground">Gala Markets</p>
               <p className="text-[11px] text-muted-foreground">Expiry Dashboard</p>
             </div>
           </div>
 
-          <h1 className="font-display text-2xl font-semibold text-foreground">
-            Welcome back
-          </h1>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Welcome back</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Sign in with your Gala Markets credentials.
           </p>
